@@ -116,6 +116,13 @@ function renderIndexPage(page) {
   hideAllPages(INDEXPAGES);
   clearDynamicText(DYNAMICTEXT);
   clearInputs();
+
+  // Clear lobby players
+  let playerList = document.getElementById("playersInLobby");
+  while (playerList.lastChild) {
+    playerList.removeChild(playerList.firstChild);
+  }
+
   displayPage(page);
 }
 

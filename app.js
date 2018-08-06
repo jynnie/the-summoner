@@ -28,12 +28,7 @@ function joinRoom(socket, name, rawID) {
   socket.emit("joinedRoom", name, roomID);
 
   // Update people in room
-  if (games[roomID]) {
-    io.sockets.in(roomID).emit("updatePlayers", games[roomID].players);
-  } else {
-    games[rawID] = { status: "lobby", players: [socket.username] };
-    io.sockets.in(roomID).emit("updatePlayers", games[roomID].players);
-  }
+  io.sockets.in(roomID).emit("updatePlayers", games[roomID].players);
 
   return roomID;
 }
@@ -69,11 +64,8 @@ io.on("connection", socket => {
 
     // Join room if it still exists
     if (rawID in games) {
-      // Add as a player to room
-      games[rawID].players.push(socket.username);
       joinRoom(socket, name, rawID);
     } else {
-      // Otherwise render error
       socket.emit("joinError", "");
     }
   });
@@ -107,14 +99,27 @@ io.on("connection", socket => {
 
   // Leave Room
   socket.on("leaveRoom", (name, rawID) => {
-    if (socket.room) {
-      socket.leave(socket.room);
-    }
-    if (name in games[rawID].players) {
+    // Remove self from players list
+    if (games[rawID].players.indexOf(name) > -1) {
       games[rawID].players.splice(games[rawID].players.indexOf(name));
     }
     socket.username = "anonymous";
     socket.room = undefined;
+
+    // Tell everyone in the room you are leaving
+    console.log("bye everyuone");
+    console.log(games[rawID].players);
+    io.sockets.in(rawID).emit("updatePlayers", games[rawID].players);
+
+    // Leave
+    if (socket.room) {
+      socket.leave(socket.room);
+    }
+  });
+
+  // Disconnect
+  socket.on("disconnect", function() {
+    console.log("a user disconnected");
   });
 });
 
