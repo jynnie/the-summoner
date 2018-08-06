@@ -67,7 +67,15 @@ io.on("connection", socket => {
   socket.on("rejoinSession", (name, rawID) => {
     socket.username = name;
 
-    joinRoom(socket, name, rawID);
+    // Join room if it still exists
+    if (rawID in games) {
+      // Add as a player to room
+      games[rawID].players.push(socket.username);
+      joinRoom(socket, name, rawID);
+    } else {
+      // Otherwise render error
+      socket.emit("joinError", "");
+    }
   });
 
   // Create a New Room

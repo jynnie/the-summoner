@@ -59,6 +59,7 @@ socket.on("updatePlayers", function(players) {
 socket.on("joinError", function(err) {
   console.log(err);
   changeDOMText("joinError", err);
+  clearCache();
 });
 
 // -- Socket Emits --
@@ -94,11 +95,7 @@ function joinRoom() {
 
 function leaveRoom() {
   socket.emit("leaveRoom", globalUsername, globalRoomID);
-
-  // Clear cache
-  storage.setItem("userSession", null);
-  globalUsername = null;
-  globalRoomID = null;
+  clearCache();
 
   // Reset lobby
   changeDOMText("gameCode", "&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;");
@@ -188,6 +185,13 @@ function renderLobby() {
 }
 
 // -- Other Helper Functions --
+
+function clearCache() {
+  storage.setItem("userSession", null);
+  globalUsername = null;
+  globalRoomID = null;
+}
+
 /**
  * Function that generates a unique "session" id based on time
  * Credit: https://gist.github.com/gordonbrander/2230317
