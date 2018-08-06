@@ -1,0 +1,130 @@
+:root {
+  --black: #404040;
+  --grey: #a1a1a1;
+  --bgd: white;
+}
+
+body {
+  align-items: center;
+  border: 1px solid var(--black);
+  color: var(--black);
+  display: flex;
+  font-family: "Lora";
+  justify-content: center;
+}
+
+body::after {
+  content: "";
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  position: absolute;
+  border-radius: 50%;
+  top: 50px;
+  left: 50px;
+  box-shadow: -82px -42px 0 0 var(--bgd), -42px -82px 0 0 var(--bgd),
+    -62px -62px 0 0 var(--bgd), calc(100vw - 50px - 48px) -82px 0 0 var(--bgd),
+    calc(100vw - 50px - 28px) -62px 0 0 var(--bgd),
+    calc(100vw - 50px - 8px) -42px 0 0 var(--bgd),
+    calc(100vw - 50px - 28px) calc(100vh - 50px - 28px) 0 0 var(--bgd),
+    calc(100vw - 50px - 48px) calc(100vh - 50px - 8px) 0 0 var(--bgd),
+    calc(100vw - 50px - 8px) calc(100vh - 50px - 48px) 0 0 var(--bgd),
+    -62px calc(100vh - 50px - 28px) 0 0 var(--bgd),
+    -42px calc(100vh - 50px - 8px) 0 0 var(--bgd),
+    -82px calc(100vh - 50px - 48px) 0 0 var(--bgd);
+}
+
+body::before {
+  content: "";
+  width: 41px;
+  height: 41px;
+  background: transparent;
+  position: absolute;
+  border-radius: 50%;
+  top: 50px;
+  left: 50px;
+  box-shadow: -62px -62px 0 0 black, calc(100vw - 50px - 29px) -62px 0 0 black,
+    calc(100vw - 50px - 29px) calc(100vh - 50px - 29px) 0 0 black,
+    -62px calc(100vh - 50px - 29px) 0 0 black;
+}
+
+h1,
+h2,
+h3 {
+  font-family: "Spectral";
+}
+
+h1 {
+  color: black;
+}
+
+ul {
+  list-style-type: none;
+  text-align: left;
+  padding: 0.5em 0;
+  -webkit-padding-start: 0;
+  border-top: 1px solid var(--black);
+  border-bottom: 1px solid var(--black);
+}
+
+li {
+  padding: 0.4em 0.4em;
+}
+
+input {
+  width: 280px;
+  border: 1px solid var(--grey);
+  display: block;
+  font-family: "Lora";
+  font-size: 1em;
+  margin: 0 auto 1em;
+  padding: 0.4em;
+}
+
+input:focus {
+  border: 1px solid var(--black);
+  outline: none;
+}
+
+button,
+.button {
+  background: var(--black);
+  border: none;
+  box-shadow: none;
+  color: var(--bgd);
+  font-family: "Spectral";
+  font-size: 1em;
+  margin: 0 6px;
+  padding: 0.5em 1em;
+  text-decoration: none;
+}
+
+button:hover,
+.button:hover {
+  background: black;
+  border: none;
+  box-shadow: none;
+  color: var(--bgd);
+  cursor: pointer;
+  font-family: "Spectral";
+  font-size: 1em;
+  margin: 0 6px;
+  padding: 0.5em 1em;
+  text-decoration: none;
+}
+
+.home,
+.lobby {
+  max-width: 400px;
+  width: 80vw;
+  text-align: center;
+}
+
+.home h1 {
+  margin-top: 0;
+  margin-bottom: 0.4em;
+}
+
+.home h3 {
+  margin-top: 0em;
+}

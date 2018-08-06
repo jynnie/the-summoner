@@ -1,0 +1,26 @@
+{
+  "name": "the-summoner",
+  "version": "1.0.0",
+  "description": "a mafia-like game",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node app",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jynnie/the-summoner.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jynnie/the-summoner/issues"
+  },
+  "homepage": "https://github.com/jynnie/the-summoner#readme",
+  "dependencies": {
+    "express": "^4.16.3",
+    "pug": "^2.0.3",
+    "socket.io": "^2.1.1"
+  }
+}

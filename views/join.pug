@@ -1,0 +1,9 @@
+extends BASE.pug
+
+block content
+  h1 The Summoner
+  input(type="text" placeholder="Enter game code" id="game_id")
+  input(type="text" placeholder="Enter your name" id="player_name")
+  div(style="margin-top: 1.5em;")
+    button(onclick="joinRoom()") Enter
+    a.button(href="/") Back
