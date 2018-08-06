@@ -48,13 +48,14 @@ function generateUID() {
 // Open games
 const games = {};
 
+// DEBUG: purposes only
+let openSockets = 0;
+
 // Socket Handlers
 let http = require("http").Server(app);
 const io = require("socket.io")(http);
 
 io.on("connection", socket => {
-  console.log("a user connected");
-
   // Default username
   socket.username = "anonymous";
 
@@ -99,33 +100,53 @@ io.on("connection", socket => {
 
   // Leave Room
   socket.on("leaveRoom", (name, rawID) => {
-    // Remove self from players list
-    if (games[rawID].players.indexOf(name) > -1) {
-      games[rawID].players.splice(games[rawID].players.indexOf(name));
+    if (rawID in games) {
+      // Remove self from players list
+      if (games[rawID].players.indexOf(name) > -1) {
+        games[rawID].players.splice(games[rawID].players.indexOf(name));
+      }
+
+      // Tell everyone in the room you are leaving
+      io.sockets.in(rawID).emit("updatePlayers", games[rawID].players);
+
+      // If you were the last player, delete the game
+      if (games[rawID].players.length < 1) {
+        delete games[rawID];
+      }
     }
+
+    // Clear socket affiliation
     socket.username = "anonymous";
     socket.room = undefined;
-
-    // Tell everyone in the room you are leaving
-    console.log("bye everyuone");
-    console.log(games[rawID].players);
-    io.sockets.in(rawID).emit("updatePlayers", games[rawID].players);
-
-    // Leave
     if (socket.room) {
       socket.leave(socket.room);
     }
   });
 
-  // Disconnect
+  // DEBUG: purposes
+  openSockets++;
+  console.log(`${openSockets} player(s) online`);
   socket.on("disconnect", function() {
-    console.log("a user disconnected");
+    openSockets--;
+    console.log(`${openSockets} player(s) online`);
   });
 });
 
 // Routes
 app.get("/", function(req, res) {
-  res.render("index");
+  res.render("index", { routeGame: false });
+});
+
+app.get("/:gamecode", function(req, res) {
+  // Try game code
+  let gamecode = req.params.gamecode;
+  if (gamecode.length === 6) {
+    if (gamecode in games) {
+      res.render("index", { routeGame: gamecode });
+    }
+  }
+
+  res.redirect("/");
 });
 
 // app.get("/create", function(req, res) {

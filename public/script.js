@@ -33,6 +33,11 @@ socket.on("joinedRoom", (name, roomID) => {
   globalUsername = name;
   globalRoomID = roomID;
 
+  // Change URL
+  if (window.location.pathname === "/") {
+    window.history.pushState(roomID, "The Summoner", `/${roomID}`);
+  }
+
   // Render lobby
   changeDOMText("gameCode", roomID);
   changeDOMText("joinError", "");
@@ -102,6 +107,11 @@ function leaveRoom() {
 
   // Send to home
   renderLanding();
+
+  // Change URL
+  if (window.location.pathname !== "/") {
+    window.history.pushState("index", "The Summoner", "/");
+  }
 }
 
 // -- Base View Render Functions --

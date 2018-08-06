@@ -1,5 +1,8 @@
 h1 The Summoner
-input(type="text" placeholder="Enter game code" id="join_game_id")
+if routeGame
+  input(type="text" placeholder="Enter game code" id="join_game_id" value=routeGame style="display: none")
+else
+  input(type="text" placeholder="Enter game code" id="join_game_id")
 input(type="text" placeholder="Enter your name" id="join_player_name")
 p#joinError.error
 button(onclick="joinRoom()") Enter

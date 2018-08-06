@@ -136,6 +136,12 @@ button:hover,
 #createPage,
 #joinPage,
 #renderPage,
+#landingPage,
 #lobbyPage {
   display: none;
+}
+
+#joinPage.show,
+#landingPage.show {
+  display: block;
 }

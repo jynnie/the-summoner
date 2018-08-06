@@ -10,11 +10,19 @@ html
     title The Summoner
   body
     .home
-      #landingPage
-        include landing.pug
+      if routeGame
+        #landingPage
+          include landing.pug
+      else
+        #landingPage.show
+          include landing.pug
       #createPage
         include create.pug
-      #joinPage
-        include join.pug
+      if routeGame
+        #joinPage.show
+          include join.pug
+      else 
+        #joinPage
+          include join.pug
       #lobbyPage
         include lobby.pug
