@@ -1,8 +1,5 @@
-extends BASE.pug
-
-block content
-  h1 The Summoner
-  input(type="text" placeholder="Enter your name" id="player_name")
-  div(style="margin-top: 1.5em;")
-    button(onclick="createRoom()") Create
-    a.button(href="/") Back
+h1 The Summoner
+input(type="text" placeholder="Enter your name" id="create_player_name")
+div(style="margin-top: 1.5em;")
+  button(onclick="createRoom()") Create
+  button(onclick="renderLanding()") Back

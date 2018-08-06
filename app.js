@@ -86,15 +86,19 @@ io.on("connection", socket => {
     // Set username for room
     socket.username = name;
 
-    // Add as player to room sesh
-    games[rawID].players.push(socket.username);
-
     // Join room if it exists
-    let roomID = joinRoom(socket, name, rawID);
+    if (rawID in games) {
+      // Add as a player to room
+      games[rawID].players.push(socket.username);
+      joinRoom(socket, name, rawID);
+    } else {
+      // Otherwise render error
+      socket.emit("joinError", `Game ${rawID} does not exist`);
+    }
   });
 
   // Leave Room
-  socket.on("leaveRoom", (name, roomID) => {
+  socket.on("leaveRoom", (name, rawID) => {
     if (socket.room) {
       socket.leave(socket.room);
     }
@@ -111,17 +115,17 @@ app.get("/", function(req, res) {
   res.render("index");
 });
 
-app.get("/create", function(req, res) {
-  res.render("create");
-});
-
-app.get("/lobby", function(req, res) {
-  res.render("lobby");
-});
-
-app.get("/join", function(req, res) {
-  res.render("join");
-});
+// app.get("/create", function(req, res) {
+//   res.render("create");
+// });
+//
+// app.get("/lobby", function(req, res) {
+//   res.render("lobby");
+// });
+//
+// app.get("/join", function(req, res) {
+//   res.render("join");
+// });
 
 // Run App
 http.listen(PORT);

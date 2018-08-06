@@ -1,9 +1,6 @@
-extends BASE.pug
-
-block content
-  h1 Lobby for Players
-  h3 Game Code: 
-    span(id= "gameCode") &#9679;&#9679;&#9679;&#9679;&#9679;&#9679;
-  ul(id= "playersInLobby")
-  button Start Game
-  button(onclick="leaveRoom()") Leave Game
+h1 Lobby for Players
+h3 Game Code: 
+  span(id= "gameCode") &#9679;&#9679;&#9679;&#9679;&#9679;&#9679;
+ul(id= "playersInLobby")
+button Start Game
+button(onclick="leaveRoom()") Leave Game

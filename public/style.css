@@ -1,6 +1,7 @@
 :root {
   --black: #404040;
   --grey: #a1a1a1;
+  --red: #a11;
   --bgd: white;
 }
 
@@ -113,8 +114,7 @@ button:hover,
   text-decoration: none;
 }
 
-.home,
-.lobby {
+.home {
   max-width: 400px;
   width: 80vw;
   text-align: center;
@@ -127,4 +127,15 @@ button:hover,
 
 .home h3 {
   margin-top: 0em;
+}
+
+.error {
+  color: var(--red);
+}
+
+#createPage,
+#joinPage,
+#renderPage,
+#lobbyPage {
+  display: none;
 }
