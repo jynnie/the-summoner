@@ -199,7 +199,7 @@ class darkening extends Spell {
 
 // Game class
 // currently only handles 5 - 6 players
-class GameState {
+class State {
   constructor() {
     this.state = 0; // 0 is lobby
     this.players = {};
@@ -210,12 +210,17 @@ class GameState {
     this.anarchyTome = new Set();
     this.demonTome = new Set();
   }
-  // Game setup functions
-  add(name) {
-    let uuid = generatePlayerUUID();
+  // Game player functions
+  add(uuid, name) {
     let player = new Caster(uuid, name);
     this.players[uuid] = player;
     return uuid;
+  }
+  kick(uuid) {
+    delete this.players[uuid];
+  }
+  has(uuid) {
+    return Object.keys(this.players).includes(uuid);
   }
   // Game state functions
   start() {
@@ -228,7 +233,7 @@ class GameState {
   get playerCount() {
     return Object.keys(this.players).length;
   }
-  get casters() {
+  get playerList() {
     let cast = [];
     for (let p of Object.keys(this.players)) {
       cast.push(this.players[p].name);
@@ -306,15 +311,11 @@ class GameState {
 }
 
 // -- TESTING --
-let game = new GameState();
-game.add("kim");
-game.add("jim");
-game.add("vim");
-game.add("rim");
-game.add("mim");
 
-game.start();
-
-exports.generateUID = generateUID;
-exports.generatePlayerUUID = generatePlayerUUID;
-exports.randFrom = randFrom;
+module.exports = {
+  generateUID: generateUID,
+  generatePlayerUUID: generatePlayerUUID,
+  randFrom: randFrom,
+  Caster: Caster,
+  State: State
+};

@@ -1,5 +1,6 @@
 const URL = "http://" + document.domain + ":" + location.port;
 const storage = window.localStorage;
+let globalSeshID = null;
 let globalRoomID = null;
 let globalUsername = null;
 
@@ -16,22 +17,24 @@ socket.on("connect", function() {
     let userInfo = JSON.parse(userSession);
     globalUsername = userInfo.username;
     globalRoomID = userInfo.room;
+    globalSeshID = userInfo.sesh;
 
-    socket.emit("rejoinSession", globalUsername, globalRoomID);
+    socket.emit("rejoinSession", globalUsername, globalSeshID, globalRoomID);
   }
 });
 
 // Confirms room was joined
-socket.on("joinedRoom", (name, roomID) => {
+socket.on("joinedRoom", (name, seshID, roomID) => {
   console.log(`Confirmed ${name} joined ${roomID}`);
 
   // Save to localStorage
   storage.setItem(
     "userSession",
-    JSON.stringify({ username: name, room: roomID })
+    JSON.stringify({ username: name, room: roomID, sesh: seshID })
   );
   globalUsername = name;
   globalRoomID = roomID;
+  globalSeshID = seshID;
 
   // Change URL
   if (window.location.pathname === "/") {
@@ -70,7 +73,8 @@ socket.on("joinError", function(err) {
 // -- Socket Emits --
 function createRoom() {
   let name = document.getElementById("create_player_name").value;
-  socket.emit("createRoom", name);
+  let sesh = generateSessionUUID();
+  socket.emit("createRoom", name, sesh);
 
   // Send to lobby
   renderLobby();
@@ -83,6 +87,7 @@ function joinRoom() {
 
   let joinUsername = document.getElementById("join_player_name").value;
   let joinRoom = document.getElementById("join_game_id").value;
+  let joinSesh = generateSessionUUID();
 
   // Form verification
   if (joinRoom.length !== 6) {
@@ -95,11 +100,11 @@ function joinRoom() {
     return;
   }
 
-  socket.emit("joinRoom", joinUsername, joinRoom);
+  socket.emit("joinRoom", joinUsername, joinSesh, joinRoom);
 }
 
 function leaveRoom() {
-  socket.emit("leaveRoom", globalUsername, globalRoomID);
+  socket.emit("leaveRoom", globalSeshID, globalRoomID);
   clearCache();
 
   // Reset lobby
@@ -110,8 +115,12 @@ function leaveRoom() {
 
   // Change URL
   if (window.location.pathname !== "/") {
-    window.history.pushState("index", "The Summoner", "/");
+    window.location.pathname = "/";
   }
+}
+
+function startGame() {
+  console.log("start game");
 }
 
 // -- Base View Render Functions --
@@ -157,14 +166,14 @@ function clearInputs() {
  * @param {string} page
  */
 function displayPage(page) {
-  document.getElementById(page + "Page").style.display = "block";
+  document.getElementById(page + "_").style.display = "block";
 }
 
 /**
  * @param {string} page
  */
 function hidePage(page) {
-  document.getElementById(page + "Page").style.display = "none";
+  document.getElementById(page + "_").style.display = "none";
 }
 
 /**
@@ -207,6 +216,7 @@ function clearCache() {
   storage.setItem("userSession", null);
   globalUsername = null;
   globalRoomID = null;
+  globalSeshID = null;
 }
 
 /**

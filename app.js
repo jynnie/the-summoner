@@ -1,6 +1,7 @@
 const express = require("express");
 const path = require("path");
 const app = express();
+const GAME = require("./game.js");
 
 const PORT = 3000;
 
@@ -9,7 +10,7 @@ app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "pug");
 app.use("/static", express.static(path.join(__dirname, "public")));
 
-// Helper functions
+// Socket Helpers
 
 /**
  * Helper function that adds socket to a room
@@ -18,35 +19,27 @@ app.use("/static", express.static(path.join(__dirname, "public")));
  * @param {string} rawID
  * @return {string}
  */
-function joinRoom(socket, name, rawID) {
+function enterRoom(socket, name, seshID, rawID) {
+  // Add as a player to room
   let roomID = String(rawID);
-  socket.room = roomID;
   socket.join(roomID);
-  console.log(`${name} joined ${roomID}`);
+  socket.room = roomID;
+  socket.sesh = seshID;
+  socket.username = name;
 
   // Send join confirmation
-  socket.emit("joinedRoom", name, roomID);
+  socket.emit("joinedRoom", name, seshID, roomID);
 
   // Update people in room
-  io.sockets.in(roomID).emit("updatePlayers", games[roomID].players);
+  io.sockets.in(roomID).emit("updatePlayers", openGames[roomID].playerList);
 
   return roomID;
 }
 
-/**
- * Generates random 6 character string for UID
- * credit: https://stackoverflow.com/questions/6248666/how-to-generate-short-uid-like-ax4j9z-in-js
- */
-function generateUID() {
-  var firstPart = (Math.random() * 46656) | 0;
-  var secondPart = (Math.random() * 46656) | 0;
-  firstPart = ("000" + firstPart.toString(36)).slice(-3);
-  secondPart = ("000" + secondPart.toString(36)).slice(-3);
-  return firstPart + secondPart;
-}
-
 // Open games
-const games = {};
+const openGames = {
+  notFoo: new GAME.State()
+};
 
 // DEBUG: purposes only
 let openSockets = 0;
@@ -54,44 +47,39 @@ let openSockets = 0;
 // Socket Handlers
 let http = require("http").Server(app);
 const io = require("socket.io")(http);
-
 io.on("connection", socket => {
   // Default username
   socket.username = "anonymous";
 
   // Rejoin Room on Refresh
-  socket.on("rejoinSession", (name, rawID) => {
-    socket.username = name;
-
+  socket.on("rejoinSession", (name, seshID, rawID) => {
     // Join room if it still exists
-    if (rawID in games) {
-      joinRoom(socket, name, rawID);
+    if (rawID in openGames) {
+      enterRoom(socket, name, seshID, rawID);
     } else {
-      socket.emit("joinError", "");
+      socket.emit("joinError", `Room ${rawID} no longer exists.`);
     }
   });
 
   // Create a New Room
-  socket.on("createRoom", name => {
+  socket.on("createRoom", (name, seshID) => {
     // Set username for room
     socket.username = name;
 
     // Create and join room
-    let rawID = generateUID();
-    games[rawID] = { status: "lobby", players: [socket.username] };
-    joinRoom(socket, name, rawID);
+    let rawID = GAME.generateUID();
+    openGames[rawID] = new GAME.State();
+    openGames[rawID].add(seshID, name); // Add player
+    enterRoom(socket, name, seshID, rawID);
   });
 
   // Join an Existing Room
-  socket.on("joinRoom", (name, rawID) => {
-    // Set username for room
-    socket.username = name;
-
+  socket.on("joinRoom", (name, seshID, rawID) => {
     // Join room if it exists
-    if (rawID in games) {
-      // Add as a player to room
-      games[rawID].players.push(socket.username);
-      joinRoom(socket, name, rawID);
+    if (rawID in openGames) {
+      openGames[rawID].add(seshID, name);
+      enterRoom(socket, name, seshID, rawID);
+      console.log(`${name} joined ${rawID}`);
     } else {
       // Otherwise render error
       socket.emit("joinError", `Game ${rawID} does not exist`);
@@ -99,25 +87,28 @@ io.on("connection", socket => {
   });
 
   // Leave Room
-  socket.on("leaveRoom", (name, rawID) => {
-    if (rawID in games) {
+  socket.on("leaveRoom", (seshID, rawID) => {
+    if (rawID in openGames) {
+      let theGame = openGames[rawID];
+      console.log(seshID);
       // Remove self from players list
-      if (games[rawID].players.indexOf(name) > -1) {
-        games[rawID].players.splice(games[rawID].players.indexOf(name));
+      if (theGame.has(seshID)) {
+        theGame.kick(seshID);
       }
 
       // Tell everyone in the room you are leaving
-      io.sockets.in(rawID).emit("updatePlayers", games[rawID].players);
+      io.sockets.in(rawID).emit("updatePlayers", theGame.playerList);
 
       // If you were the last player, delete the game
-      if (games[rawID].players.length < 1) {
-        delete games[rawID];
+      if (theGame.playerCount < 1) {
+        delete openGames[rawID];
       }
     }
 
     // Clear socket affiliation
     socket.username = "anonymous";
     socket.room = undefined;
+    socket.sesh = undefined;
     if (socket.room) {
       socket.leave(socket.room);
     }
@@ -136,30 +127,17 @@ io.on("connection", socket => {
 app.get("/", function(req, res) {
   res.render("index", { routeGame: false });
 });
-
 app.get("/:gamecode", function(req, res) {
   // Try game code
   let gamecode = req.params.gamecode;
   if (gamecode.length === 6) {
-    if (gamecode in games) {
+    if (gamecode in openGames) {
       res.render("index", { routeGame: gamecode });
     }
   }
 
   res.redirect("/");
 });
-
-// app.get("/create", function(req, res) {
-//   res.render("create");
-// });
-//
-// app.get("/lobby", function(req, res) {
-//   res.render("lobby");
-// });
-//
-// app.get("/join", function(req, res) {
-//   res.render("join");
-// });
 
 // Run App
 http.listen(PORT);

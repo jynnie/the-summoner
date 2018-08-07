@@ -11,18 +11,20 @@ html
   body
     .home
       if routeGame
-        #landingPage
+        #landing_.page
           include landing.pug
       else
-        #landingPage.show
+        .show#landing_.page
           include landing.pug
-      #createPage
+      #create_.page
         include create.pug
       if routeGame
-        #joinPage.show
+        .show#join_.page
           include join.pug
       else 
-        #joinPage
+        #join_.page
           include join.pug
-      #lobbyPage
+      #lobby_.page
         include lobby.pug
+      #game_.page
+        include game.pug

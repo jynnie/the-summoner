@@ -12,6 +12,8 @@ body {
   display: flex;
   font-family: "Lora";
   justify-content: center;
+  /* overflow: auto; */
+  height: calc(100vh - 18px);
 }
 
 body::after {
@@ -64,6 +66,9 @@ ul {
   text-align: left;
   padding: 0.5em 0;
   -webkit-padding-start: 0;
+}
+
+ul.border {
   border-top: 1px solid var(--black);
   border-bottom: 1px solid var(--black);
 }
@@ -133,15 +138,49 @@ button:hover,
   color: var(--red);
 }
 
-#createPage,
-#joinPage,
-#renderPage,
-#landingPage,
-#lobbyPage {
+.page {
   display: none;
 }
 
-#joinPage.show,
-#landingPage.show {
+.page.show {
   display: block;
+}
+
+.magic.circle {
+  display: flex;
+  justify-content: center;
+}
+
+.veni,
+.vidi,
+.vici {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--black);
+  border-radius: 50%;
+  margin: 5px;
+}
+
+.caster.details {
+  padding: 0.5em 0;
+  border-top: 1px solid var(--black);
+  border-bottom: 1px solid var(--black);
+}
+
+.caster.list {
+}
+
+.caster.list h3 {
+  margin-top: 0.5em;
+  margin-bottom: 0em;
+}
+
+.caster.list ul {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.caster.list li {
+  background-color: rgba(0, 0, 0, 0.1);
+  margin-bottom: 4px;
 }
