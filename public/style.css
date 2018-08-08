@@ -73,8 +73,17 @@ ul.border {
   border-bottom: 1px solid var(--black);
 }
 
+ul.two {
+  columns: 2;
+  -webkit-columns: 2;
+  -moz-columns: 2;
+  column-gap: 10px;
+}
+
 li {
   padding: 0.4em 0.4em;
+  display: inline-block;
+  width: calc(100% - 0.8em);
 }
 
 input {
@@ -146,21 +155,6 @@ button:hover,
   display: block;
 }
 
-.magic.circle {
-  display: flex;
-  justify-content: center;
-}
-
-.veni,
-.vidi,
-.vici {
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--black);
-  border-radius: 50%;
-  margin: 5px;
-}
-
 .caster.details {
   padding: 0.5em 0;
   border-top: 1px solid var(--black);
@@ -182,5 +176,152 @@ button:hover,
 
 .caster.list li {
   background-color: rgba(0, 0, 0, 0.1);
-  margin-bottom: 4px;
+  margin-bottom: 8px;
+}
+
+.caster.list li.red {
+  background-color: rgba(143, 19, 29, 0.1);
+}
+.caster.list li.orange {
+  background-color: rgba(253, 101, 23, 0.1);
+}
+.caster.list li.green {
+  background-color: rgba(198, 214, 9, 0.2);
+}
+.caster.list li.blue {
+  background-color: rgba(6, 120, 246, 0.1);
+}
+.caster.list li.pink {
+  background-color: rgba(252, 78, 153, 0.1);
+}
+.caster.list li.purple {
+  background-color: rgba(152, 44, 216, 0.1);
+}
+
+/* Magic Circle Fun */
+#gameTimer {
+  position: absolute;
+  width: 100%;
+  top: calc(150px - 0.7em);
+  font-family: "Spectral";
+  font-size: 2em;
+}
+
+.magic.circle {
+  width: 300px;
+  height: 300px;
+  position: relative;
+  margin: auto;
+}
+
+.magic.circle .back {
+  position: absolute;
+  top: 90px;
+  left: 90px;
+  width: 120px;
+  height: 120px;
+  border: 1px solid var(--black);
+  border-radius: 50%;
+  box-shadow: 0 0 0 calc(2em - 2px) white, 0 0 0 2em var(--black),
+    0 0 0 calc(2.3em - 1px) white, 0 0 0 2.3em var(--black),
+    0 0 0 calc(3.6em - 1px) white, 0 0 0 3.6em var(--black),
+    0 0 0 calc(4em - 1px) white, 0 0 0 4em var(--black);
+}
+
+.magic.circle .triangle {
+  width: 240px;
+  height: 1px;
+  position: absolute;
+  top: 82px;
+  left: calc(150px - 120px);
+  background: var(--black);
+}
+
+.magic.circle .triangle::before {
+  content: "";
+  width: 240px;
+  height: 1px;
+  position: absolute;
+  top: 104px;
+  left: calc(150px - 210px);
+  background: var(--black);
+  transform: rotate(60deg);
+}
+
+.magic.circle .triangle::after {
+  content: "";
+  width: 240px;
+  height: 1px;
+  position: absolute;
+  top: 104px;
+  right: calc(150px - 210px);
+  background: var(--black);
+  transform: rotate(-60deg);
+}
+
+.magic.circle .tri {
+  width: 200px;
+  height: 1px;
+  position: absolute;
+  bottom: 88px;
+  left: calc(150px - 99px);
+  background: var(--black);
+  transform: rotate(0deg);
+}
+
+.magic.circle .tri::before {
+  content: "";
+  width: 200px;
+  height: 1px;
+  position: absolute;
+  bottom: 92px;
+  left: calc(120px - 68px);
+  background: var(--black);
+  transform: rotate(60deg);
+}
+
+.magic.circle .tri::after {
+  content: "";
+  width: 200px;
+  height: 1px;
+  position: absolute;
+  bottom: 92px;
+  right: calc(120px - 68px);
+  background: var(--black);
+  transform: rotate(-60deg);
+}
+
+.magic.circle .spot {
+  position: absolute;
+  width: 52px;
+  height: 52px;
+  background: white;
+  border: 2px solid var(--black);
+  border-radius: 50%;
+  margin: 5px;
+  z-index: 1;
+  transition: box-shadow 0.2s;
+}
+
+.magic.circle .spot:hover {
+  box-shadow: 0 0 0.3em 0 currentColor;
+  cursor: pointer;
+}
+
+#veni,
+#vici {
+  top: calc(110px + 4em);
+}
+
+#veni {
+  left: 22px;
+}
+
+#vici {
+  right: 22px;
+}
+
+#vidi {
+  top: 12px;
+  left: 118px;
 }

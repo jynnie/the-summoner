@@ -38,6 +38,21 @@ const randFrom = array => {
 };
 
 /**
+ * @param {number} duration in seconds
+ * NOT the same as in script.js
+ */
+const startTimer = duration => {
+  let timer = duration;
+  setInterval(function() {
+    minutes = parseInt(timer / 60, 10);
+    seconds = parseInt(timer % 60, 10);
+
+    minutes = minutes < 10 ? "0" + minutes : minutes;
+    seconds = seconds < 10 ? "0" + seconds : seconds;
+  }, 1000);
+};
+
+/**
  * @param {Set} colorPool: of all colors in play
  * @param {Set} vTome: vanquishment tome
  * @param {Set} eTome: tome config that already exists
@@ -71,7 +86,9 @@ const makeTome = (colorPool, vTome, eTome) => {
   return newTome;
 };
 
-// Utility classes
+/****************
+ * Game classes *
+ ***************/
 const MANACOLORS = ["red", "orange", "green", "blue", "pink", "purple"];
 
 // Player class
@@ -85,6 +102,7 @@ class Caster {
   ) {
     this.uuid = uuid;
     this.name = name;
+    this.socketid = null;
     this.color = color;
     this.item = item;
     this.role = role;
@@ -106,15 +124,17 @@ class Caster {
   }
 }
 
-// Item classes
+/****************
+ * Item classes *
+ ***************/
 class aTome {
   constructor(config, type) {
-    this.name = "A Tome";
+    this.name = "a Tome";
     this.role = type;
     this.config = config; // color Set;
   }
   get about() {
-    return "A tome. The mana color combo either summons the demon or will blow all of you up, but two of the three are correct for vanquishing the circle.";
+    return "A tome details a mana color combo that either summons the demon or blows everyone up. But two of the three colors are correct for vanquishing the circle.";
   }
   get read() {
     return this.config;
@@ -197,15 +217,18 @@ class darkening extends Spell {
   cast(player) {}
 }
 
-// Game class
+/****************
+ * State class  *
+ ***************/
 // currently only handles 5 - 6 players
 class State {
   constructor() {
     this.state = 0; // 0 is lobby
     this.players = {};
-    this.gameTime = null; // countdown for 7 minutes
+    this.gameTime = 60 * 7; // countdown for 7 minutes
     this.playColors = [];
     this.playItems = [];
+    this.circle = { 1: undefined, 2: undefined, 3: undefined };
     this.vanquishTome = new Set();
     this.anarchyTome = new Set();
     this.demonTome = new Set();
@@ -222,12 +245,24 @@ class State {
   has(uuid) {
     return Object.keys(this.players).includes(uuid);
   }
+  cast(uuid, spot) {
+    // Player adds color
+    this.players[uuid].color;
+
+    // If three colors in circle, check
+  }
+  uncast(uuid, spot) {
+    // Player removes color
+  }
   // Game state functions
   start() {
     this.giveColors();
     this.makeTomes();
     this.giveItems();
     this.advanceState();
+
+    // Start counting down
+    this.gameTime = startTimer(60 * 7);
   }
   // GET functions
   get playerCount() {
@@ -239,6 +274,19 @@ class State {
       cast.push(this.players[p].name);
     }
     return cast;
+  }
+  get playerColorList() {
+    let cast = [];
+    for (let p of Object.keys(this.players)) {
+      cast.push([this.players[p].name, this.players[p].color]);
+    }
+    return cast;
+  }
+  get playerIDs() {
+    return Object.keys(this.players);
+  }
+  get time() {
+    return this.gameTime;
   }
   // Helper functions
   advanceState() {
@@ -279,7 +327,7 @@ class State {
     let itemPool = new Set();
 
     // Add items to pool
-    itemPool.add(new aTome(new Set(this.anarchyTome), "anarchist"));
+    itemPool.add(new aTome(new Set(this.anarchyTome), "the Anarchist"));
     itemPool.add(new trueSight());
     itemPool.add(new forcedPalm());
     itemPool.add(new holyPurity());
@@ -294,7 +342,7 @@ class State {
     }
 
     // Add demon tome
-    itemPool.add(new aTome(new Set(this.demonTome), "summoner"));
+    itemPool.add(new aTome(new Set(this.demonTome), "the Summoner"));
 
     // Randomly distribute
     for (let p of Object.keys(this.players)) {
@@ -304,18 +352,18 @@ class State {
       if (item instanceof aTome) {
         this.players[p].role = item.role;
       } else {
-        this.players[p].role = "guardian";
+        this.players[p].role = "a Guardian";
       }
     }
   }
 }
 
-// -- TESTING --
-
+// Export
 module.exports = {
   generateUID: generateUID,
   generatePlayerUUID: generatePlayerUUID,
   randFrom: randFrom,
+  startTimer: startTimer,
   Caster: Caster,
   State: State
 };

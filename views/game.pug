@@ -1,14 +1,25 @@
 .magic.circle
-  .veni
-  .vidi
-  .vici
+  #gameTimer 07:00
+  #veni.spot
+  #vidi.spot
+  #vici.spot
+  .back
+  .triangle
+  .tri
   
 .caster.details
-  h1 You are the xxx!
-  h3 More details
+  h1 You are 
+    span#playerRole xxx
+    | !
+  h3 A 
+    span#playerColor yyy
+    |  mana caster with 
+    span#playerItem zzz
+  p#playerItemAbout
 
 .caster.list
   h3 Casters
-  ul
-    li jim
-    li kim
+  ul.two#playersInGame
+
+button End Game
+button(onclick="leaveRoom()") Leave Game
