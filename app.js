@@ -63,12 +63,23 @@ function enterRoom(socket, name, seshID, rawID) {
  * @param {Player object} player
  */
 function tellPlayerIdentity(player) {
+  io.to(player.socketid).emit("yourInfo", player.role, player.color);
+
+  // itemType: 2 if casts on multiple, 1 if casts on any one, 0 if casts on self, -1 if tome
+  let itemType = player.item.spellType;
+
+  // If tome, pass the config
+  let read = undefined;
+  if (itemType === -1) {
+    read = Array.from(player.item.config);
+  }
+
   io.to(player.socketid).emit(
-    "yourInfo",
-    player.role,
-    player.color,
+    "yourItem",
     player.item.name,
-    player.item.about
+    player.item.about,
+    itemType,
+    read
   );
 }
 

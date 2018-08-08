@@ -140,10 +140,10 @@ class aTome {
     this.config = config; // color Set;
   }
   get about() {
-    return "A tome details a mana color combo that either summons the demon or blows everyone up. But two of the three colors are correct for vanquishing the circle.";
+    return "A tome details a mana color combo that either summons the demon or blows everyone up. But two of the three colors are correct to vanquish.";
   }
-  get read() {
-    return this.config;
+  get spellType() {
+    return -1;
   }
 }
 
@@ -172,6 +172,9 @@ class holyPurity extends Item {
   get about() {
     return "Holy purity can only be cast once, but at any time (even during a darkening). The user cannot be darkened and if cast on the anarchist, they become a guardian.";
   }
+  get spellType() {
+    return 1;
+  }
   use(player, game) {
     game.players[player].pure = true;
 
@@ -188,7 +191,10 @@ class trueSight extends Spell {
     this.activeTimer = null;
   }
   get about() {
-    return "True sight allows the user to see which color manas are correct for cast attempts in 30 seconds.";
+    return "True sight allows the user to see which color manas are correct in cast attempts within 30 seconds of use.";
+  }
+  get spellType() {
+    return 0;
   }
   use(player, game) {
     game.players[player].sight = 1;
@@ -206,6 +212,9 @@ class forcedPalm extends Spell {
   get about() {
     return "The next colored magic cast by the enchanted cannot be blocked or nullified";
   }
+  get spellType() {
+    return 1;
+  }
   use(player, game) {
     game.players[player].force = true;
 
@@ -220,6 +229,9 @@ class chaosStorm extends Spell {
   }
   get about() {
     return "Summon a storm to swap two casters' items or swap you color mana with another caster";
+  }
+  get spellType() {
+    return 2;
   }
   use(player1, player2, itemSwap, game) {
     if (itemSwap) {
@@ -248,6 +260,9 @@ class darkening extends Spell {
   get about() {
     return "Curse another caster such that they cannot see or cast magic for 30 seconds.";
   }
+  get spellType() {
+    return 1;
+  }
   use(player, game) {
     game.players[player].sight = -1;
 
@@ -271,6 +286,7 @@ class State {
     this.vanquishTome = new Set();
     this.anarchyTome = new Set();
     this.demonTome = new Set();
+    this.anarchist = false; // is there an anarchist in play?
   }
   // Game player functions
   add(uuid, name) {
@@ -314,7 +330,10 @@ class State {
       correct = this.checkTome(this.circle, this.vanquishTome);
       if (correct.length === 3) {
         this.results = "vanquished";
-      } else if (this.checkTome(this.circle, this.anarchyTome).length === 3) {
+      } else if (
+        this.anarchist &&
+        this.checkTome(this.circle, this.anarchyTome).length === 3
+      ) {
         this.results = "anarchy";
       } else if (this.checkTome(this.circle, this.demonTome).length === 3) {
         this.results = "demon";
@@ -388,8 +407,8 @@ class State {
     this.vanquishTome = vTome;
 
     // Make other tomes
-    this.anarchyTome = makeTome(colorPool, vTome, new Set());
-    this.demonTome = makeTome(colorPool, vTome, this.anarchyTome);
+    this.demonTome = makeTome(colorPool, vTome, new Set());
+    this.anarchyTome = makeTome(colorPool, vTome, this.demonTome);
   }
   giveItems() {
     let itemPool = new Set();
@@ -419,6 +438,9 @@ class State {
       itemPool.delete(item);
       if (item instanceof aTome) {
         this.players[p].role = item.role;
+        if (item.role === "the Anarchist") {
+          this.anarchist = true;
+        }
       } else {
         this.players[p].role = "a Guardian";
       }

@@ -4,6 +4,10 @@ let globalSeshID = null;
 let globalRoomID = null;
 let globalUsername = null;
 
+let selectable = false;
+let selectNum = undefined;
+let selected = new Set();
+
 // Make connection
 let socket = io.connect(URL);
 
@@ -84,11 +88,45 @@ socket.on("gameStart", players => {
 
 socket.on("updateCasters", players => updateInGameCasters(players));
 
-socket.on("yourInfo", (role, color, item, about) => {
+socket.on("yourInfo", (role, color) => {
   changeDOMText("playerRole", role);
   changeDOMText("playerColor", color);
-  changeDOMText("playerItem", item);
+});
+
+socket.on("yourItem", (name, about, spell, read) => {
+  changeDOMText("playerItem", name);
   changeDOMText("playerItemAbout", about);
+
+  if (spell === -1) {
+    // Is a tome, show reading
+    let spots = ["rock", "paper", "scissors"];
+    for (let i of [0, 1, 2]) {
+      document.getElementById(spots[i]).className = `spot ${read[i]}`;
+    }
+    document.getElementById("tomeRead").classList.remove("hide");
+    document.getElementById("useItem").classList.add("hide");
+    return;
+  } else {
+    // Is a spell, show cast button
+    document.getElementById("tomeRead").classList.add("hide");
+    document.getElementById("useItem").classList.remove("hide");
+  }
+
+  if (spell > 0) {
+    // Make casters selectable
+    selectable = true;
+    selectNum = spell;
+
+    let playerList = Array.from(
+      document.getElementById("playersInGame").childNodes
+    );
+    for (let player of playerList) {
+      player.classList.add("selectable");
+      player.onclick = function() {
+        select(player.id);
+      };
+    }
+  }
 });
 
 socket.on("updateGame", (results, num, circle) => {
@@ -115,7 +153,7 @@ socket.on("updateGame", (results, num, circle) => {
       changeDOMText("castResult", results);
     }, 1000);
     return;
-  } else {
+  } else if (num !== false) {
     setTimeout(() => {
       clearCircle();
       changeDOMText("castResult", "");
@@ -191,6 +229,29 @@ function castColor(spot) {
 }
 
 // -- Helper Functions --
+
+/**
+ * Allows for selection of casters for items
+ * @param {string} uuid
+ */
+function select(uuid) {
+  console.log(uuid);
+  if (selectable) {
+    let element = document.getElementById(uuid);
+    console.log(element);
+
+    // If selected, deselect
+    if (selected.has(uuid)) {
+      element.classList.remove("selected");
+      selected.delete(uuid);
+    }
+    // If unselected and within size constraints, select
+    else if (selected.size < selectNum) {
+      element.classList.add("selected");
+      selected.add(uuid);
+    }
+  }
+}
 
 /**
  * @param {number} duration in seconds
@@ -337,6 +398,12 @@ function updateInGameCasters(players) {
     newPlayer.innerHTML = `${player[1]} ${player[0]}`;
     newPlayer.classList.add(player[1]);
     newPlayer.id = player[2];
+    if (selectable) {
+      newPlayer.classList.add("selectable");
+      newPlayer.onclick = function() {
+        select(newPlayer.id);
+      };
+    }
     playerList.appendChild(newPlayer);
   }
 }
