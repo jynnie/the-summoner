@@ -91,6 +91,40 @@ socket.on("yourInfo", (role, color, item, about) => {
   changeDOMText("playerItemAbout", about);
 });
 
+socket.on("updateGame", (results, num, circle) => {
+  // Set circle colors
+  let spots = ["veni", "vidi", "vici"];
+  for (let i of [1, 2, 3]) {
+    if (circle[i] === undefined) {
+      document.getElementById(spots[i - 1]).className = `spot`;
+    } else {
+      document.getElementById(spots[i - 1]).className = `spot ${circle[i]}`;
+    }
+  }
+
+  // Display cast number
+  console.log(num);
+  if (num !== false) {
+    changeDOMText("castResult", num);
+    document.getElementById("castResult").classList.remove("hide");
+    document.getElementById("gameTimer").classList.add("hide");
+  }
+
+  if (results) {
+    setTimeout(() => {
+      changeDOMText("castResult", results);
+    }, 1000);
+    return;
+  } else {
+    setTimeout(() => {
+      clearCircle();
+      changeDOMText("castResult", "");
+      document.getElementById("castResult").classList.add("hide");
+      document.getElementById("gameTimer").classList.remove("hide");
+    }, 2000);
+  }
+});
+
 // -- Socket Emits --
 function createRoom() {
   let name = document.getElementById("create_player_name").value;
@@ -149,6 +183,11 @@ function leaveRoom() {
 
 function startGame() {
   socket.emit("startGame");
+}
+
+function castColor(spot) {
+  socket.emit("castColor", globalSeshID, spot);
+  console.log(`${globalUsername} cast on ${spot}`);
 }
 
 // -- Helper Functions --
@@ -220,6 +259,11 @@ function renderIndexPage(page) {
     playerList.removeChild(playerList.firstChild);
   }
 
+  // Clear circle
+  document.getElementById("castResult").classList.add("hide");
+  document.getElementById("gameTimer").classList.remove("hide");
+  clearCircle();
+
   displayPage(page);
 }
 
@@ -238,6 +282,14 @@ function clearInputs() {
 
   for (let i of inputs) {
     i.value = "";
+  }
+}
+
+// Clear the casting circles
+function clearCircle() {
+  let spots = ["veni", "vidi", "vici"];
+  for (let i of [1, 2, 3]) {
+    document.getElementById(spots[i - 1]).className = `spot`;
   }
 }
 
@@ -284,6 +336,7 @@ function updateInGameCasters(players) {
     let newPlayer = document.createElement("li");
     newPlayer.innerHTML = `${player[1]} ${player[0]}`;
     newPlayer.classList.add(player[1]);
+    newPlayer.id = player[2];
     playerList.appendChild(newPlayer);
   }
 }

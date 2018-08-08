@@ -12,6 +12,12 @@ app.use("/static", express.static(path.join(__dirname, "public")));
 
 // Socket Helpers
 
+function saveSocketAffiliation(socket, name, seshID, rawID) {
+  socket.room = rawID;
+  socket.sesh = seshID;
+  socket.username = name;
+}
+
 /**
  * Helper function to create new player
  * @param {socket} socket
@@ -24,10 +30,7 @@ function newPlayer(socket, name, seshID, rawID) {
   openGames[rawID].add(seshID, name);
   openGames[rawID].players[seshID].socketid = socket.id;
 
-  // Save socket affiliations
-  socket.room = rawID;
-  socket.sesh = seshID;
-  socket.username = name;
+  saveSocketAffiliation(socket, name, seshID, rawID);
 }
 
 /**
@@ -95,8 +98,10 @@ io.on("connection", socket => {
       theGame.players[seshID].socketid = socket.id;
 
       if (theGame.state === 1) {
-        socket.emit("updateCasters", theGame.playerColorList);
         tellPlayerIdentity(theGame.players[seshID]);
+        saveSocketAffiliation(socket, name, seshID, rawID);
+        socket.emit("updateCasters", theGame.playerColorList);
+        socket.emit("updateGame", theGame.results, false, theGame.circle);
       }
     } else {
       socket.emit("joinError", `Room ${rawID} no longer exists.`);
@@ -178,6 +183,38 @@ io.on("connection", socket => {
           let player = theGame.players[p];
 
           tellPlayerIdentity(player);
+        }
+      }
+    }
+  });
+
+  // Cast color
+  socket.on("castColor", (seshID, spot) => {
+    if (socket.room in openGames) {
+      let theGame = openGames[socket.room];
+      if (theGame.state === 1) {
+        let correct = theGame.cast(seshID, spot);
+
+        // Check if a full cast
+        if (correct === undefined) {
+          // Tell everyone new game status
+          io.sockets
+            .in(socket.room)
+            .emit("updateGame", theGame.results, false, theGame.circle);
+        } else {
+          // Tell everyone new game status
+          io.sockets
+            .in(socket.room)
+            .emit(
+              "updateGame",
+              theGame.results,
+              correct.length,
+              theGame.circle
+            );
+
+          if (!theGame.results) {
+            theGame.circle = [undefined, undefined, undefined];
+          }
         }
       }
     }

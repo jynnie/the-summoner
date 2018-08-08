@@ -107,6 +107,8 @@ class Caster {
     this.item = item;
     this.role = role;
     this.sight = 0;
+    this.pure = false;
+    this.force = false;
   }
   get id() {
     return this.uuid;
@@ -117,11 +119,15 @@ class Caster {
   give(item) {
     this.item = item;
   }
-  take() {
-    let item = this.item;
-    this.item = undefined;
-    return item;
+  useItem(p1, p2 = null, swap = null, game) {
+    //??
+    this.item.cast();
   }
+  // take() {
+  //   let item = this.item;
+  //   this.item = undefined;
+  //   return item;
+  // }
 }
 
 /****************
@@ -166,7 +172,13 @@ class holyPurity extends Item {
   get about() {
     return "Holy purity can only be cast once, but at any time (even during a darkening). The user cannot be darkened and if cast on the anarchist, they become a guardian.";
   }
-  cast(player) {}
+  use(player, game) {
+    game.players[player].pure = true;
+
+    if (game.players[player].role === "the Anarchist") {
+      game.players[player].role = "a Guardian";
+    }
+  }
 }
 
 class trueSight extends Spell {
@@ -178,7 +190,11 @@ class trueSight extends Spell {
   get about() {
     return "True sight allows the user to see which color manas are correct for cast attempts in 30 seconds.";
   }
-  cast(player) {}
+  use(player, game) {
+    game.players[player].sight = 1;
+
+    // TODO: set timer;
+  }
 }
 
 class forcedPalm extends Spell {
@@ -190,7 +206,11 @@ class forcedPalm extends Spell {
   get about() {
     return "The next colored magic cast by the enchanted cannot be blocked or nullified";
   }
-  cast(player) {}
+  use(player, game) {
+    game.players[player].force = true;
+
+    // TODO: set timer;
+  }
 }
 
 class chaosStorm extends Spell {
@@ -201,7 +221,21 @@ class chaosStorm extends Spell {
   get about() {
     return "Summon a storm to swap two casters' items or swap you color mana with another caster";
   }
-  cast(player1, player2, itemSwap) {}
+  use(player1, player2, itemSwap, game) {
+    if (itemSwap) {
+      [game.players[player1].item, game.players[player2].item] = [
+        game.players[player2].item,
+        game.players[player1].item
+      ];
+    } else {
+      [game.players[player1].color, game.players[player2].color] = [
+        game.players[player2].color,
+        game.players[player1].color
+      ];
+    }
+
+    //TODO: set timer
+  }
 }
 
 class darkening extends Spell {
@@ -214,7 +248,11 @@ class darkening extends Spell {
   get about() {
     return "Curse another caster such that they cannot see or cast magic for 30 seconds.";
   }
-  cast(player) {}
+  use(player, game) {
+    game.players[player].sight = -1;
+
+    // TODO: set timer
+  }
 }
 
 /****************
@@ -228,7 +266,8 @@ class State {
     this.gameTime = 60 * 7; // countdown for 7 minutes
     this.playColors = [];
     this.playItems = [];
-    this.circle = { 1: undefined, 2: undefined, 3: undefined };
+    this.circle = [undefined, undefined, undefined];
+    this.results = false;
     this.vanquishTome = new Set();
     this.anarchyTome = new Set();
     this.demonTome = new Set();
@@ -246,13 +285,42 @@ class State {
     return Object.keys(this.players).includes(uuid);
   }
   cast(uuid, spot) {
-    // Player adds color
-    this.players[uuid].color;
+    // If cast on your own spot. uncast
+    if (this.circle[spot] === this.players[uuid].color) {
+      this.circle[spot] = undefined;
+      return undefined;
+    }
 
-    // If three colors in circle, check
-  }
-  uncast(uuid, spot) {
-    // Player removes color
+    // Player adds color
+    if (this.circle[spot] === undefined) {
+      // Remove player color in any other spots
+      let color = this.players[uuid].color;
+      for (let i of [1, 2, 3]) {
+        if (this.circle[i] === color) {
+          this.circle[i] = undefined;
+        }
+      }
+      // Then recast on spot
+      this.circle[spot] = this.players[uuid].color;
+    }
+
+    // If three colors in circle, check; return true if end game
+    let correct = undefined;
+    if (
+      this.circle[1] !== undefined &&
+      this.circle[2] !== undefined &&
+      this.circle[3] !== undefined
+    ) {
+      correct = this.checkTome(this.circle, this.vanquishTome);
+      if (correct.length === 3) {
+        this.results = "vanquished";
+      } else if (this.checkTome(this.circle, this.anarchyTome).length === 3) {
+        this.results = "anarchy";
+      } else if (this.checkTome(this.circle, this.demonTome).length === 3) {
+        this.results = "demon";
+      }
+    }
+    return correct;
   }
   // Game state functions
   start() {
@@ -278,7 +346,7 @@ class State {
   get playerColorList() {
     let cast = [];
     for (let p of Object.keys(this.players)) {
-      cast.push([this.players[p].name, this.players[p].color]);
+      cast.push([this.players[p].name, this.players[p].color, p]);
     }
     return cast;
   }
@@ -355,6 +423,24 @@ class State {
         this.players[p].role = "a Guardian";
       }
     }
+  }
+  checkTome(circle, tome) {
+    let correct = [];
+    if (
+      this.circle[1] !== undefined &&
+      this.circle[2] !== undefined &&
+      this.circle[3] !== undefined
+    ) {
+      let veni = tome.has(this.circle[1]);
+      let vidi = tome.has(this.circle[2]);
+      let vici = tome.has(this.circle[3]);
+      for (let i of [1, 2, 3]) {
+        if (tome.has(this.circle[i])) {
+          correct.push(this.circle[i].color);
+        }
+      }
+    }
+    return correct;
   }
 }
 

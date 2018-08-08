@@ -1,8 +1,10 @@
 .magic.circle
-  #gameTimer 07:00
-  #veni.spot
-  #vidi.spot
-  #vici.spot
+  .inner.magic
+    #gameTimer 07:00
+    #castResult.hide
+  #veni.spot(onclick="castColor(1)")
+  #vidi.spot(onclick="castColor(2)")
+  #vici.spot(onclick="castColor(3)")
   .back
   .triangle
   .tri

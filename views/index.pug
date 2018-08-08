@@ -9,22 +9,24 @@ html
     script(src="/static/script.js")
     title The Summoner
   body
-    .home
-      if routeGame
-        #landing_.page
-          include landing.pug
-      else
-        .show#landing_.page
-          include landing.pug
-      #create_.page
-        include create.pug
-      if routeGame
-        .show#join_.page
-          include join.pug
-      else 
-        #join_.page
-          include join.pug
-      #lobby_.page
-        include lobby.pug
-      #game_.page
-        include game.pug
+    .container
+      .window
+        .content
+          if routeGame
+            #landing_.page
+              include landing.pug
+          else
+            .show#landing_.page
+              include landing.pug
+          #create_.page
+            include create.pug
+          if routeGame
+            .show#join_.page
+              include join.pug
+          else 
+            #join_.page
+              include join.pug
+          #lobby_.page
+            include lobby.pug
+          #game_.page
+            include game.pug

@@ -6,13 +6,14 @@
 }
 
 body {
-  align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
   border: 1px solid var(--black);
   color: var(--black);
-  display: flex;
   font-family: "Lora";
-  justify-content: center;
-  /* overflow: auto; */
   height: calc(100vh - 18px);
 }
 
@@ -21,7 +22,7 @@ body::after {
   width: 40px;
   height: 40px;
   background: transparent;
-  position: absolute;
+  position: fixed;
   border-radius: 50%;
   top: 50px;
   left: 50px;
@@ -34,21 +35,44 @@ body::after {
     calc(100vw - 50px - 8px) calc(100vh - 50px - 48px) 0 0 var(--bgd),
     -62px calc(100vh - 50px - 28px) 0 0 var(--bgd),
     -42px calc(100vh - 50px - 8px) 0 0 var(--bgd),
-    -82px calc(100vh - 50px - 48px) 0 0 var(--bgd);
+    -82px calc(100vh - 50px - 48px) 0 0 var(--bgd), -62px -62px 0 1px black,
+    calc(100vw - 50px - 28px) -62px 0 1px black,
+    calc(100vw - 50px - 28px) calc(100vh - 50px - 28px) 0 1px black,
+    -62px calc(100vh - 50px - 28px) 0 1px black;
 }
 
-body::before {
-  content: "";
-  width: 41px;
-  height: 41px;
-  background: transparent;
-  position: absolute;
-  border-radius: 50%;
-  top: 50px;
-  left: 50px;
-  box-shadow: -62px -62px 0 0 black, calc(100vw - 50px - 29px) -62px 0 0 black,
-    calc(100vw - 50px - 29px) calc(100vh - 50px - 29px) 0 0 black,
-    -62px calc(100vh - 50px - 29px) 0 0 black;
+.container {
+  position: fixed;
+  top: 9px;
+  left: 9px;
+  bottom: 9px;
+  right: 9px;
+  overflow: auto;
+}
+
+.window {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  /* justify-content: center;
+  align-items: center; */
+}
+
+.content {
+  margin: auto;
+  min-width: 0;
+  max-width: 400px;
+  width: 80vw;
+  text-align: center;
+}
+
+.content h1 {
+  margin-top: 0;
+  margin-bottom: 0.4em;
+}
+
+.content h3 {
+  margin-top: 0em;
 }
 
 h1,
@@ -109,7 +133,7 @@ button,
   color: var(--bgd);
   font-family: "Spectral";
   font-size: 1em;
-  margin: 0 6px;
+  margin: 0 6px 10px;
   padding: 0.5em 1em;
   text-decoration: none;
 }
@@ -122,31 +146,15 @@ button:hover,
   color: var(--bgd);
   cursor: pointer;
   font-family: "Spectral";
-  font-size: 1em;
-  margin: 0 6px;
   padding: 0.5em 1em;
   text-decoration: none;
-}
-
-.home {
-  max-width: 400px;
-  width: 80vw;
-  text-align: center;
-}
-
-.home h1 {
-  margin-top: 0;
-  margin-bottom: 0.4em;
-}
-
-.home h3 {
-  margin-top: 0em;
 }
 
 .error {
   color: var(--red);
 }
 
+/* Page Components */
 .page {
   display: none;
 }
@@ -180,7 +188,7 @@ button:hover,
 }
 
 .caster.list li.red {
-  background-color: rgba(143, 19, 29, 0.1);
+  background-color: rgba(198, 27, 37, 0.1);
 }
 .caster.list li.orange {
   background-color: rgba(253, 101, 23, 0.1);
@@ -199,12 +207,17 @@ button:hover,
 }
 
 /* Magic Circle Fun */
-#gameTimer {
+.inner.magic div {
   position: absolute;
   width: 100%;
   top: calc(150px - 0.7em);
   font-family: "Spectral";
   font-size: 2em;
+  z-index: 2;
+}
+
+.inner.magic .hide {
+  display: none;
 }
 
 .magic.circle {
@@ -300,12 +313,38 @@ button:hover,
   border-radius: 50%;
   margin: 5px;
   z-index: 1;
-  transition: box-shadow 0.2s;
+  transition: box-shadow 0.2s, background 0.2s;
 }
 
 .magic.circle .spot:hover {
-  box-shadow: 0 0 0.3em 0 currentColor;
+  --box-shadow-color: var(--black);
+  box-shadow: 0 0 0.4em 0 var(--box-shadow-color);
   cursor: pointer;
+}
+
+.magic.circle .spot.red {
+  --box-shadow-color: rgb(198, 27, 37);
+  background-color: var(--box-shadow-color);
+}
+.magic.circle .spot.orange {
+  --box-shadow-color: rgb(253, 101, 23);
+  background-color: var(--box-shadow-color);
+}
+.magic.circle .spot.green {
+  --box-shadow-color: rgb(198, 214, 9);
+  background-color: var(--box-shadow-color);
+}
+.magic.circle .spot.blue {
+  --box-shadow-color: rgb(6, 120, 246);
+  background-color: var(--box-shadow-color);
+}
+.magic.circle .spot.pink {
+  --box-shadow-color: rgb(252, 78, 153);
+  background-color: var(--box-shadow-color);
+}
+.magic.circle .spot.purple {
+  --box-shadow-color: rgb(152, 44, 216);
+  background-color: var(--box-shadow-color);
 }
 
 #veni,
