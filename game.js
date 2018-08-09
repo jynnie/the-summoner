@@ -470,9 +470,9 @@ class State {
       // Item usage
       if (item.spellType === 0) {
         item.use(uuid, this);
-      } else if (item.spellType === 1) {
+      } else if (item.spellType === 1 && enchantees.length > 0) {
         item.use(enchantees[0], this);
-      } else if (item.spellType === 2) {
+      } else if (item.spellType === 2 && enchantees.length > 1) {
         item.use(enchantees, true, this);
       }
     }
