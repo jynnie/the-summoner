@@ -93,7 +93,7 @@ socket.on("yourInfo", (role, color) => {
   changeDOMText("playerColor", color);
 });
 
-socket.on("yourItem", (name, about, spell, read) => {
+socket.on("yourItem", (name, about, spell, enabled, read) => {
   changeDOMText("playerItem", name);
   changeDOMText("playerItemAbout", about);
 
@@ -110,6 +110,12 @@ socket.on("yourItem", (name, about, spell, read) => {
     // Is a spell, show cast button
     document.getElementById("tomeRead").classList.add("hide");
     document.getElementById("useItem").classList.remove("hide");
+
+    if (enabled) {
+      document.getElementById("useItem").removeAttribute("disabled");
+    } else {
+      document.getElementById("useItem").disabled = true;
+    }
   }
 
   if (spell > 0) {
@@ -122,9 +128,13 @@ socket.on("yourItem", (name, about, spell, read) => {
     );
     for (let player of playerList) {
       player.classList.add("selectable");
-      player.onclick = function() {
-        select(player.id);
-      };
+      if (enabled) {
+        player.onclick = function() {
+          select(player.id);
+        };
+      } else {
+        player.onclick = function() {};
+      }
     }
   }
 });
@@ -228,6 +238,11 @@ function castColor(spot) {
   console.log(`${globalUsername} cast on ${spot}`);
 }
 
+function useItem() {
+  socket.emit("useItem", globalSeshID, Array.from(selected));
+  setTimeout(clearSelected, 1000);
+}
+
 // -- Helper Functions --
 
 /**
@@ -235,10 +250,8 @@ function castColor(spot) {
  * @param {string} uuid
  */
 function select(uuid) {
-  console.log(uuid);
   if (selectable) {
     let element = document.getElementById(uuid);
-    console.log(element);
 
     // If selected, deselect
     if (selected.has(uuid)) {
@@ -351,6 +364,16 @@ function clearCircle() {
   let spots = ["veni", "vidi", "vici"];
   for (let i of [1, 2, 3]) {
     document.getElementById(spots[i - 1]).className = `spot`;
+  }
+}
+
+// Clear which casters were selected
+function clearSelected() {
+  let playerList = Array.from(
+    document.getElementById("playersInGame").childNodes
+  );
+  for (let player of playerList) {
+    player.classList.remove("selected");
   }
 }
 

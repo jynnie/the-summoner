@@ -150,6 +150,32 @@ button:hover,
   text-decoration: none;
 }
 
+button:disabled,
+.button:disabled {
+  background: var(--black);
+  border: none;
+  box-shadow: none;
+  color: var(--bgd);
+  cursor: disabled;
+  font-family: "Spectral";
+  padding: 0.5em 1em;
+  text-decoration: none;
+  opacity: 0.6;
+}
+
+button:hover:disabled,
+.button:hover:disabled {
+  background: var(--black);
+  border: none;
+  box-shadow: none;
+  color: var(--bgd);
+  cursor: not-allowed;
+  font-family: "Spectral";
+  padding: 0.5em 1em;
+  text-decoration: none;
+  opacity: 0.6;
+}
+
 .error {
   color: var(--red);
 }
@@ -248,7 +274,7 @@ button:hover,
   border: 1px solid var(--box-shadow-color);
 }
 .caster.list li.selectable.selected {
-  border: 1px solid var(--black);
+  outline: 1px solid var(--box-shadow-color);
 }
 
 .caster.list li.red {

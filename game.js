@@ -39,18 +39,58 @@ const randFrom = array => {
 
 /**
  * @param {number} duration in seconds
- * NOT the same as in script.js
+ * @param {function} callback
+ * credit: https://stackoverflow.com/questions/8126466/how-do-i-reset-the-setinterval-timer
  */
-const startTimer = duration => {
-  let timer = duration;
-  setInterval(function() {
-    minutes = parseInt(timer / 60, 10);
-    seconds = parseInt(timer % 60, 10);
+function Timer(fn, t) {
+  var timerObj = setInterval(fn, t);
 
-    minutes = minutes < 10 ? "0" + minutes : minutes;
-    seconds = seconds < 10 ? "0" + seconds : seconds;
-  }, 1000);
-};
+  this.stop = function() {
+    if (timerObj) {
+      clearInterval(timerObj);
+      timerObj = null;
+    }
+    return this;
+  };
+
+  // start timer using current settings (if it's not already running)
+  this.start = function() {
+    if (!timerObj) {
+      this.stop();
+      timerObj = setInterval(fn, t);
+    }
+    return this;
+  };
+
+  // start with new interval, stop current interval
+  this.reset = function(newT) {
+    t = newT;
+    return this.stop().start();
+  };
+}
+
+/**
+ * @param {number} t in milliseconds
+ * @param {function} callback
+ */
+function Countdown(fn, t) {
+  console.log("start timer");
+  console.log(typeof fn);
+  let timer = setTimeout(fn, t);
+
+  this.start = () => {
+    if (!timer) {
+      timer = setTimeout(fn, t);
+    }
+  };
+
+  this.stop = () => {
+    if (timer) {
+      clearTimeout(timer);
+    }
+    timer = null;
+  };
+}
 
 /**
  * @param {Set} colorPool: of all colors in play
@@ -113,21 +153,29 @@ class Caster {
   get id() {
     return this.uuid;
   }
+  get enchantments() {
+    let effects = [];
+    if (this.sight < 0) {
+      effects.push("darkened");
+    } else if (this.sight > 0) {
+      effects.push("true sight");
+    }
+
+    if (this.pure) {
+      effects.push("pure");
+    }
+    if (this.force) {
+      effects.push("forceful");
+    }
+
+    return effects;
+  }
   assignColor(color) {
     this.color = color;
   }
   give(item) {
     this.item = item;
   }
-  useItem(p1, p2 = null, swap = null, game) {
-    //??
-    this.item.cast();
-  }
-  // take() {
-  //   let item = this.item;
-  //   this.item = undefined;
-  //   return item;
-  // }
 }
 
 /****************
@@ -157,8 +205,23 @@ class Spell extends Item {
   constructor() {
     super();
     this.active = false;
-    this.cooldown = null;
+    this.cooldown = 3000;
     this.cooldownTimer = null;
+  }
+  get usable() {
+    if (this.cooldownTimer === null) {
+      return true;
+    }
+    return false;
+  }
+  clearTimer() {
+    this.cooldownTimer = null;
+  }
+  setTimer() {
+    this.cooldownTimer = new Countdown(
+      this.clearTimer.bind(this),
+      this.cooldown
+    );
   }
 }
 
@@ -175,11 +238,20 @@ class holyPurity extends Item {
   get spellType() {
     return 1;
   }
+  get usable() {
+    if (!this.used) {
+      return true;
+    }
+    return false;
+  }
   use(player, game) {
-    game.players[player].pure = true;
+    if (!this.used) {
+      game.players[player].pure = true;
 
-    if (game.players[player].role === "the Anarchist") {
-      game.players[player].role = "a Guardian";
+      if (game.players[player].role === "the Anarchist") {
+        game.players[player].role = "a Guardian";
+      }
+      this.used = true;
     }
   }
 }
@@ -200,6 +272,7 @@ class trueSight extends Spell {
     game.players[player].sight = 1;
 
     // TODO: set timer;
+    this.setTimer();
   }
 }
 
@@ -219,6 +292,7 @@ class forcedPalm extends Spell {
     game.players[player].force = true;
 
     // TODO: set timer;
+    this.setTimer();
   }
 }
 
@@ -228,12 +302,15 @@ class chaosStorm extends Spell {
     this.name = "Chaos Storm";
   }
   get about() {
-    return "Summon a storm to swap two casters' items or swap you color mana with another caster";
+    return "Summon a storm to swap two casters' items";
+    // or swap you color mana with another caster
   }
   get spellType() {
     return 2;
   }
-  use(player1, player2, itemSwap, game) {
+  use(players, itemSwap, game) {
+    let player1 = players[0];
+    let player2 = players[1];
     if (itemSwap) {
       [game.players[player1].item, game.players[player2].item] = [
         game.players[player2].item,
@@ -247,6 +324,7 @@ class chaosStorm extends Spell {
     }
 
     //TODO: set timer
+    this.setTimer();
   }
 }
 
@@ -264,9 +342,12 @@ class darkening extends Spell {
     return 1;
   }
   use(player, game) {
-    game.players[player].sight = -1;
+    if (!game.players[player].pure) {
+      game.players[player].sight = -1;
+    }
 
     // TODO: set timer
+    this.setTimer();
   }
 }
 
@@ -308,7 +389,7 @@ class State {
     }
 
     // Player adds color
-    if (this.circle[spot] === undefined) {
+    if (this.circle[spot] === undefined || this.players[uuid].force) {
       // Remove player color in any other spots
       let color = this.players[uuid].color;
       for (let i of [1, 2, 3]) {
@@ -341,6 +422,21 @@ class State {
     }
     return correct;
   }
+  useItem(uuid, enchantees) {
+    // Check not darkened
+    if (this.players[uuid].sight >= 0) {
+      let item = this.players[uuid].item;
+
+      // Item usage
+      if (item.spellType === 0) {
+        item.use(uuid, this);
+      } else if (item.spellType === 1) {
+        item.use(enchantees[0], this);
+      } else if (item.spellType === 2) {
+        item.use(enchantees, true, this);
+      }
+    }
+  }
   // Game state functions
   start() {
     this.giveColors();
@@ -349,7 +445,7 @@ class State {
     this.advanceState();
 
     // Start counting down
-    this.gameTime = startTimer(60 * 7);
+    // this.gameTime = startTimer(60 * 7);
   }
   // GET functions
   get playerCount() {
@@ -471,7 +567,8 @@ module.exports = {
   generateUID: generateUID,
   generatePlayerUUID: generatePlayerUUID,
   randFrom: randFrom,
-  startTimer: startTimer,
+  Timer: Timer,
+  Countdown: Countdown,
   Caster: Caster,
   State: State
 };

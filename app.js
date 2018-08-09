@@ -74,11 +74,17 @@ function tellPlayerIdentity(player) {
     read = Array.from(player.item.config);
   }
 
+  // Check if item is still in cooldown
+  let enabled = false;
+  if (player.item.usable) {
+    enabled = true;
+  }
   io.to(player.socketid).emit(
     "yourItem",
     player.item.name,
     player.item.about,
     itemType,
+    enabled,
     read
   );
 }
@@ -227,6 +233,34 @@ io.on("connection", socket => {
             theGame.circle = [undefined, undefined, undefined];
           }
         }
+      }
+    }
+  });
+
+  // Player uses an item
+  socket.on("useItem", (seshID, selected) => {
+    if (socket.room in openGames) {
+      let theGame = openGames[socket.room];
+      if (theGame.state === 1) {
+        theGame.useItem(seshID, selected);
+
+        // Update everyone on their identities
+        for (let p of theGame.playerIDs) {
+          let player = theGame.players[p];
+
+          tellPlayerIdentity(player);
+        }
+
+        // Update again in 30 seconds
+        setTimeout(function() {
+          for (let p of theGame.playerIDs) {
+            let player = theGame.players[p];
+
+            tellPlayerIdentity(player);
+          }
+        }, 3008);
+
+        console.log("An item was successfully used");
       }
     }
   });
