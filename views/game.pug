@@ -13,6 +13,7 @@
   h1 You are 
     span#playerRole xxx
     | !
+  p#playerEnchants
   h3 A 
     span#playerColor yyy
     |  mana caster with 
@@ -28,5 +29,5 @@
   h3 Casters
   ul.two#playersInGame
 
-button End Game
+button(onclick="endGame()") End Game
 button(onclick="leaveRoom()") Leave Game

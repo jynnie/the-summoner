@@ -423,6 +423,9 @@ button:hover:disabled,
   cursor: pointer;
 }
 
+.magic.circle .spot.black {
+  background-color: var(--black) !important;
+}
 .magic.circle .spot.red {
   --box-shadow-color: rgb(198, 27, 37);
   background-color: var(--box-shadow-color);

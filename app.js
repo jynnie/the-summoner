@@ -63,7 +63,18 @@ function enterRoom(socket, name, seshID, rawID) {
  * @param {Player object} player
  */
 function tellPlayerIdentity(player) {
-  io.to(player.socketid).emit("yourInfo", player.role, player.color);
+  // Get player enchantments on purity/sight/force
+  io.to(player.socketid).emit(
+    "yourInfo",
+    player.role,
+    player.color,
+    player.enchantments
+  );
+
+  // If player is darkened, don't send anything else
+  if (player.sight < 0) {
+    return;
+  }
 
   // itemType: 2 if casts on multiple, 1 if casts on any one, 0 if casts on self, -1 if tome
   let itemType = player.item.spellType;
@@ -87,6 +98,42 @@ function tellPlayerIdentity(player) {
     enabled,
     read
   );
+}
+
+function updateGameAPlayer(socketid, theGame, seshID, correct) {
+  // Send solutions to true sight
+  if (theGame.players[seshID].sight > 0 && correct !== false) {
+    console.log(correct);
+    io.to(socketid).emit("truthSeen", correct);
+  }
+
+  // Don't send if darkened
+  if (theGame.players[seshID].sight >= 0) {
+    // Send number correct
+    if (correct !== false) {
+      io.to(socketid).emit(
+        "updateGame",
+        theGame.results,
+        correct.length,
+        theGame.circle
+      );
+    } else {
+      io.to(socketid).emit(
+        "updateGame",
+        theGame.results,
+        false,
+        theGame.circle
+      );
+    }
+  }
+}
+
+function updateGameAllPlayers(theGame, correct) {
+  for (let p of theGame.playerIDs) {
+    let player = theGame.players[p];
+
+    updateGameAPlayer(player.socketid, theGame, p, correct);
+  }
 }
 
 // Open games
@@ -117,8 +164,8 @@ io.on("connection", socket => {
       if (theGame.state === 1) {
         tellPlayerIdentity(theGame.players[seshID]);
         saveSocketAffiliation(socket, name, seshID, rawID);
+        updateGameAPlayer(socket.id, theGame, seshID, false);
         socket.emit("updateCasters", theGame.playerColorList);
-        socket.emit("updateGame", theGame.results, false, theGame.circle);
       }
     } else {
       socket.emit("joinError", `Room ${rawID} no longer exists.`);
@@ -189,6 +236,19 @@ io.on("connection", socket => {
       let theGame = openGames[socket.room];
       if (theGame.state === 0) {
         theGame.start();
+        theGame.gameTime = new GAME.Timer(function() {
+          // Tell everyone the time
+          io.sockets.in(socket.room).emit("gameTime", theGame.time);
+
+          // Update everyone on their info
+          for (let p of theGame.playerIDs) {
+            tellPlayerIdentity(theGame.players[p]);
+          }
+
+          if (theGame.time === "00:00") {
+            theGame.gameTime.stop();
+          }
+        }, 7 * 60);
 
         // Tell everyone the game has started
         io.sockets
@@ -215,19 +275,10 @@ io.on("connection", socket => {
         // Check if a full cast
         if (correct === undefined) {
           // Tell everyone new game status
-          io.sockets
-            .in(socket.room)
-            .emit("updateGame", theGame.results, false, theGame.circle);
+          updateGameAllPlayers(theGame, false);
         } else {
           // Tell everyone new game status
-          io.sockets
-            .in(socket.room)
-            .emit(
-              "updateGame",
-              theGame.results,
-              correct.length,
-              theGame.circle
-            );
+          updateGameAllPlayers(theGame, correct);
 
           if (!theGame.results) {
             theGame.circle = [undefined, undefined, undefined];
@@ -251,16 +302,29 @@ io.on("connection", socket => {
           tellPlayerIdentity(player);
         }
 
-        // Update again in 30 seconds
-        setTimeout(function() {
-          for (let p of theGame.playerIDs) {
-            let player = theGame.players[p];
-
-            tellPlayerIdentity(player);
-          }
-        }, 3008);
-
         console.log("An item was successfully used");
+      }
+    }
+  });
+
+  // End game
+  // TODO: make this better so you don't leave the room
+  socket.on("endGame", () => {
+    if (socket.room in openGames) {
+      let theGame = openGames[socket.room];
+
+      // Tell everyone the game has ended
+      io.sockets.in(socket.room).emit("gameEnded");
+
+      // Delete the game
+      delete theGame;
+
+      // Clear socket affiliation
+      socket.username = "anonymous";
+      socket.room = undefined;
+      socket.sesh = undefined;
+      if (socket.room) {
+        socket.leave(socket.room);
       }
     }
   });

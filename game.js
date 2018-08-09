@@ -38,12 +38,33 @@ const randFrom = array => {
 };
 
 /**
- * @param {number} duration in seconds
- * @param {function} callback
- * credit: https://stackoverflow.com/questions/8126466/how-do-i-reset-the-setinterval-timer
+ * @param {number} t in milliseconds
+ * @param {function} fn to be executed
+ * Credit: https://stackoverflow.com/questions/8126466/how-do-i-reset-the-setinterval-timer
+ * Credit: https://stackoverflow.com/questions/20618355/the-simplest-possible-javascript-countdown-timer
  */
 function Timer(fn, t) {
-  var timerObj = setInterval(fn, t);
+  var t, minutes, seconds;
+  var timerObj = setInterval(function() {
+    if (--t < 0) {
+      t = 0;
+    }
+    fn();
+  }, 1000);
+
+  this.parseTime = function() {
+    if (timerObj) {
+      minutes = parseInt(t / 60, 10);
+      seconds = parseInt(t % 60, 10);
+
+      minutes = minutes < 10 ? "0" + minutes : minutes;
+      seconds = seconds < 10 ? "0" + seconds : seconds;
+
+      return `${minutes}:${seconds}`;
+    } else {
+      return "00:00";
+    }
+  };
 
   this.stop = function() {
     if (timerObj) {
@@ -57,12 +78,12 @@ function Timer(fn, t) {
   this.start = function() {
     if (!timerObj) {
       this.stop();
-      timerObj = setInterval(fn, t);
+      timerObj = setInterval(fn, 1000);
     }
     return this;
   };
 
-  // start with new interval, stop current interval
+  // start with new time, stop current interval
   this.reset = function(newT) {
     t = newT;
     return this.stop().start();
@@ -74,8 +95,6 @@ function Timer(fn, t) {
  * @param {function} callback
  */
 function Countdown(fn, t) {
-  console.log("start timer");
-  console.log(typeof fn);
   let timer = setTimeout(fn, t);
 
   this.start = () => {
@@ -158,7 +177,7 @@ class Caster {
     if (this.sight < 0) {
       effects.push("darkened");
     } else if (this.sight > 0) {
-      effects.push("true sight");
+      effects.push("true seeing");
     }
 
     if (this.pure) {
@@ -205,8 +224,10 @@ class Spell extends Item {
   constructor() {
     super();
     this.active = false;
-    this.cooldown = 3000;
+    this.cooldown = 60000;
     this.cooldownTimer = null;
+    this.activeTimer = null;
+    this.activeTime = 20000;
   }
   get usable() {
     if (this.cooldownTimer === null) {
@@ -214,13 +235,26 @@ class Spell extends Item {
     }
     return false;
   }
-  clearTimer() {
+  clearCooldown() {
     this.cooldownTimer = null;
   }
-  setTimer() {
+  setCooldown() {
     this.cooldownTimer = new Countdown(
-      this.clearTimer.bind(this),
-      this.cooldown
+      this.clearCooldown.bind(this),
+      this.cooldown + this.activeTime
+    );
+  }
+  clearActive(player, game) {
+    this.activeTimer = null;
+    this.clearUse(player, game);
+    console.log("Clear usage, set cooldown");
+  }
+  setActive(player, game) {
+    console.log("Start active");
+    this.setCooldown();
+    this.activeTimer = new Countdown(
+      this.clearActive.bind(this, player, game),
+      this.activeTime
     );
   }
 }
@@ -260,10 +294,9 @@ class trueSight extends Spell {
   constructor() {
     super();
     this.name = "True Sight";
-    this.activeTimer = null;
   }
   get about() {
-    return "True sight allows the user to see which color manas are correct in cast attempts within 30 seconds of use.";
+    return "True sight allows the user to see which color manas are correct in cast attempts within 20 seconds of use.";
   }
   get spellType() {
     return 0;
@@ -271,8 +304,12 @@ class trueSight extends Spell {
   use(player, game) {
     game.players[player].sight = 1;
 
-    // TODO: set timer;
-    this.setTimer();
+    this.setActive(player, game);
+  }
+  clearUse(player, game) {
+    if (game.players[player].sight === 1) {
+      game.players[player].sight = 0;
+    }
   }
 }
 
@@ -280,7 +317,6 @@ class forcedPalm extends Spell {
   constructor() {
     super();
     this.name = "Forced Palm";
-    this.enchanted = null; // who it has been cast on
   }
   get about() {
     return "The next colored magic cast by the enchanted cannot be blocked or nullified";
@@ -291,8 +327,10 @@ class forcedPalm extends Spell {
   use(player, game) {
     game.players[player].force = true;
 
-    // TODO: set timer;
-    this.setTimer();
+    this.setActive(player, game);
+  }
+  clearUse(player, game) {
+    game.players[player].force = false;
   }
 }
 
@@ -323,8 +361,7 @@ class chaosStorm extends Spell {
       ];
     }
 
-    //TODO: set timer
-    this.setTimer();
+    this.setCooldown();
   }
 }
 
@@ -332,11 +369,10 @@ class darkening extends Spell {
   constructor() {
     super();
     this.name = "The Darkening";
-    this.enchanted = null;
-    this.activeTimer = null;
+    // this.enchanted = null;
   }
   get about() {
-    return "Curse another caster such that they cannot see or cast magic for 30 seconds.";
+    return "Curse another caster such that they cannot see or cast magic for 20 seconds.";
   }
   get spellType() {
     return 1;
@@ -346,8 +382,12 @@ class darkening extends Spell {
       game.players[player].sight = -1;
     }
 
-    // TODO: set timer
-    this.setTimer();
+    this.setActive(player, game);
+  }
+  clearUse(player, game) {
+    if (game.players[player].sight === -1) {
+      game.players[player].sight = 0;
+    }
   }
 }
 
@@ -359,7 +399,7 @@ class State {
   constructor() {
     this.state = 0; // 0 is lobby
     this.players = {};
-    this.gameTime = 60 * 7; // countdown for 7 minutes
+    this.gameTime = null; // countdown for 7 minutes
     this.playColors = [];
     this.playItems = [];
     this.circle = [undefined, undefined, undefined];
@@ -444,8 +484,7 @@ class State {
     this.giveItems();
     this.advanceState();
 
-    // Start counting down
-    // this.gameTime = startTimer(60 * 7);
+    // Game timer started in app.js
   }
   // GET functions
   get playerCount() {
@@ -469,7 +508,7 @@ class State {
     return Object.keys(this.players);
   }
   get time() {
-    return this.gameTime;
+    return this.gameTime.parseTime();
   }
   // Helper functions
   advanceState() {
@@ -554,7 +593,7 @@ class State {
       let vici = tome.has(this.circle[3]);
       for (let i of [1, 2, 3]) {
         if (tome.has(this.circle[i])) {
-          correct.push(this.circle[i].color);
+          correct.push(this.circle[i]);
         }
       }
     }

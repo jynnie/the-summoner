@@ -86,11 +86,45 @@ socket.on("gameStart", players => {
   renderGame();
 });
 
+socket.on("gameTime", time => {
+  changeDOMText("gameTimer", time);
+});
+
 socket.on("updateCasters", players => updateInGameCasters(players));
 
-socket.on("yourInfo", (role, color) => {
+socket.on("yourInfo", (role, color, enchantments) => {
   changeDOMText("playerRole", role);
   changeDOMText("playerColor", color);
+
+  if (enchantments.length > 0) {
+    changeDOMText("playerEnchants", `You are ${enchantments.join(", ")}`);
+
+    console.log(enchantments.includes("darkened"));
+
+    // If you've been darkened
+    if (enchantments.includes("darkened")) {
+      darkenDOMText("playerRole", 7);
+      darkenDOMText("playerItem", 5);
+      darkenDOMText("playerItemAbout", 20);
+
+      // Disable item
+      document.getElementById("useItem").removeAttribute("disabled");
+
+      // Darken circle
+      let spots = ["veni", "vidi", "vici"];
+      for (let i of [1, 2, 3]) {
+        document.getElementById(spots[i - 1]).classList.add("black");
+      }
+      return;
+    }
+  } else {
+    changeDOMText("playerEnchants", "");
+  }
+  // Undarken circle
+  let spots = ["veni", "vidi", "vici"];
+  for (let i of [1, 2, 3]) {
+    document.getElementById(spots[i - 1]).classList.remove("black");
+  }
 });
 
 socket.on("yourItem", (name, about, spell, enabled, read) => {
@@ -161,7 +195,7 @@ socket.on("updateGame", (results, num, circle) => {
   if (results) {
     setTimeout(() => {
       changeDOMText("castResult", results);
-    }, 1000);
+    }, 2005);
     return;
   } else if (num !== false) {
     setTimeout(() => {
@@ -169,7 +203,33 @@ socket.on("updateGame", (results, num, circle) => {
       changeDOMText("castResult", "");
       document.getElementById("castResult").classList.add("hide");
       document.getElementById("gameTimer").classList.remove("hide");
+    }, 3000);
+  }
+});
+
+socket.on("truthSeen", truth => {
+  setTimeout(() => {
+    changeDOMText("castResult", "I saw " + truth.join(", "));
+    document.getElementById("castResult").classList.remove("hide");
+    document.getElementById("gameTimer").classList.add("hide");
+
+    setTimeout(() => {
+      changeDOMText("castResult", "");
+      document.getElementById("castResult").classList.add("hide");
+      document.getElementById("gameTimer").classList.remove("hide");
     }, 2000);
+  }, 1005);
+});
+
+socket.on("gameEnded", () => {
+  clearCache();
+
+  // Reset lobby
+  changeDOMText("gameCode", "&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;");
+
+  // Change URL
+  if (window.location.pathname !== "/") {
+    window.location.pathname = "/";
   }
 });
 
@@ -243,6 +303,10 @@ function useItem() {
   setTimeout(clearSelected, 1000);
 }
 
+function endGame() {
+  socket.emit("endGame");
+}
+
 // -- Helper Functions --
 
 /**
@@ -265,31 +329,6 @@ function select(uuid) {
     }
   }
 }
-
-/**
- * @param {number} duration in seconds
- * Modified version of the one in game.js
- * Credit: https://stackoverflow.com/questions/20618355/the-simplest-possible-javascript-countdown-timer
- */
-const startTimer = (duration, display) => {
-  let timer = duration,
-    minutes,
-    seconds;
-  setInterval(function() {
-    minutes = parseInt(timer / 60, 10);
-    seconds = parseInt(timer % 60, 10);
-
-    minutes = minutes < 10 ? "0" + minutes : minutes;
-    seconds = seconds < 10 ? "0" + seconds : seconds;
-
-    display.innerHTML = `${minutes}:${seconds}`;
-
-    if (--timer < 0) {
-      timer = 0;
-      return;
-    }
-  }, 1000);
-};
 
 // Clears local storage
 function clearCache() {
@@ -316,7 +355,14 @@ function generateSessionUUID() {
 
 // -- Base View Render Functions --
 const INDEXPAGES = ["landing", "create", "join", "lobby", "game"];
-const DYNAMICTEXT = ["joinError", "playerRole"];
+const DYNAMICTEXT = [
+  "joinError",
+  "playerRole",
+  "playerColor",
+  "playerItem",
+  "playerItemAbout",
+  "playerEnchants"
+];
 
 /**
  * Renders a page on the index.pug
@@ -375,6 +421,7 @@ function clearSelected() {
   for (let player of playerList) {
     player.classList.remove("selected");
   }
+  selected = new Set();
 }
 
 /**
@@ -401,11 +448,18 @@ function hideAllPages(pages) {
 }
 
 /**
- * @param {string} elementId
+ * @param {string} elementID
  * @param {string} text
  */
 function changeDOMText(elementID, text) {
   document.getElementById(elementID).innerHTML = text;
+}
+
+/**
+ * @param {string} elementID
+ */
+function darkenDOMText(elementID, num) {
+  document.getElementById(elementID).innerHTML = "&blk12;".repeat(num);
 }
 
 // Updates list of casters in game page
@@ -450,6 +504,4 @@ function renderLobby() {
 
 function renderGame() {
   renderIndexPage("game");
-  let gameTimer = document.getElementById("gameTimer");
-  startTimer(7 * 60, gameTimer);
 }
