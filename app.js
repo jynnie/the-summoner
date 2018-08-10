@@ -108,7 +108,7 @@ function updateGameAPlayer(socketid, theGame, seshID, correct) {
   }
 
   // Don't send if darkened
-  if (theGame.players[seshID].sight >= 0) {
+  if (theGame.players[seshID].sight >= 0 || theGame.results) {
     // Send number correct
     if (correct !== false) {
       io.to(socketid).emit(
