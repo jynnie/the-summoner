@@ -150,6 +150,7 @@ const io = require("socket.io")(http);
 io.on("connection", socket => {
   // Default username
   socket.username = "anonymous";
+  console.log("Connection made!");
 
   // Rejoin Room on Refresh
   socket.on("rejoinSession", (name, seshID, rawID) => {
@@ -340,6 +341,7 @@ io.on("connection", socket => {
 
 // Routes
 app.get("/", function(req, res) {
+  console.log("GET /");
   res.render("index", { routeGame: false });
 });
 app.get("/:gamecode", function(req, res) {
@@ -355,4 +357,4 @@ app.get("/:gamecode", function(req, res) {
 });
 
 // Run App
-http.listen(PORT);
+http.listen();
