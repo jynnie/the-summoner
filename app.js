@@ -357,4 +357,4 @@ app.get("/:gamecode", function(req, res) {
 });
 
 // Run App
-http.listen();
+http.listen(process.env.PORT || PORT);
